@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "node test/e2e/run.mjs",
     "package": "node build/package.mjs",
-    "package:dir": "node build/package.mjs --dir"
+    "package:dir": "node build/package.mjs --dir",
+    "demo": "node build/demo/make-demo.mjs"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",

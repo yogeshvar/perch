@@ -63,6 +63,8 @@ code,pre{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.875rem}
 figure{margin:0 0 4.5rem}
 .shot{display:block;background:var(--tint);border:1px solid var(--rule);border-radius:8px;overflow:hidden;aspect-ratio:9/4}
 .shot img{display:block;width:100%;height:auto;aspect-ratio:9/4;object-fit:cover;color:var(--muted);font-size:.875rem}
+.shot video{display:block;width:100%;height:auto;aspect-ratio:2/1;background:var(--tint)}
+.stills{margin:3rem 0 0}
 figcaption{font-size:.875rem;color:var(--muted);margin-top:.75rem}
 section{border-top:1px solid var(--rule);padding:3rem 0}
 h2{font-size:1.6rem;margin-bottom:1.5rem}
@@ -119,12 +121,13 @@ footer a{color:var(--ink)}
 
   <figure>
     <div class="shot">
-      <picture>
-        <source srcset="assets/perch-dark.png" media="(prefers-color-scheme: dark)">
-        <img src="assets/perch-light.png" width="2880" height="1280" loading="eager" decoding="async" alt="The Perch shelf open at the top of a Mac screen, showing the terminal, clipboard history, files and notes panes side by side.">
-      </picture>
+      <video id="demo" autoplay muted loop playsinline preload="metadata" poster="assets/perch-demo-poster.png" width="1280" height="640" aria-label="A short demo of Perch: the shelf slides down, runs a test in the terminal, copies a clipboard item, takes a dropped file, saves a quick note, collapses and resizes panes, and switches between light and dark.">
+        <source src="assets/perch-demo.webm" type="video/webm">
+        <source src="assets/perch-demo.mp4" type="video/mp4">
+        <img src="assets/perch-demo-poster.png" width="1280" height="640" alt="The Perch shelf open at the top of a Mac screen, showing the terminal, clipboard history, files and notes panes side by side.">
+      </video>
     </div>
-    <figcaption>The shelf, open: terminal, clipboard, files and notes in one row.</figcaption>
+    <figcaption>A scripted demo of the real interface, not a screen recording.</figcaption>
   </figure>
 
   <section aria-labelledby="shelf">
@@ -137,6 +140,16 @@ footer a{color:var(--ink)}
     </ul>
     <p class="note" style="margin-top:1.75rem">Panes collapse to slim rails and resize by dragging the dividers. Drag the shelf’s edge to change its height. Light and dark themes follow the system.</p>
   </section>
+
+  <figure class="stills">
+    <div class="shot">
+      <picture>
+        <source srcset="assets/perch-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="assets/perch-light.png" width="2880" height="1280" loading="lazy" decoding="async" alt="The Perch shelf open, showing the terminal, clipboard history, files and notes panes side by side.">
+      </picture>
+    </div>
+    <figcaption>The shelf, open: terminal, clipboard, files and notes in one row.</figcaption>
+  </figure>
 
   <section aria-labelledby="pull">
     <h2 id="pull">The pull</h2>
@@ -175,10 +188,6 @@ footer a{color:var(--ink)}
   <section aria-labelledby="faq">
     <h2 id="faq">Questions</h2>
     <details>
-      <summary>Is this Unclutter?</summary>
-      <p>No. Perch is independent software and is not affiliated with Unclutter.</p>
-    </details>
-    <details>
       <summary>Does it embed Claude?</summary>
       <p>No. The terminal pane runs the CLI you install yourself, such as Claude Code or Codex, in a real PTY with your own login. Perch embeds nothing and is not affiliated with Anthropic or OpenAI.</p>
     </details>
@@ -199,10 +208,11 @@ footer a{color:var(--ink)}
 
 <footer>
   <p>Perch is open source under the MIT license. <a href="https://github.com/yogeshvar/perch">github.com/yogeshvar/perch</a></p>
-  <p>Not affiliated with Unclutter, Anthropic or OpenAI.</p>
+  <p>Not affiliated with Anthropic or OpenAI.</p>
 </footer>
 </div>
 <script>
+(function(){var v=document.getElementById('demo');if(v&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){v.removeAttribute('autoplay');v.pause();v.controls=true;}})();
 if(navigator.clipboard)document.documentElement.classList.add('js');
 document.querySelectorAll('.cmd').forEach(function(b){
   var btn=b.querySelector('.copy'),code=b.querySelector('code');

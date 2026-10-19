@@ -2,10 +2,11 @@
 
 A pull-down shelf for the tools you already run.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/perch-dark.png">
-  <img src="docs/assets/perch-light.png" alt="The Perch shelf open across the top of the screen: a terminal running a shell, a clipboard history list, a Files pane with a folder and three documents, and a Notes pane with a launch checklist.">
-</picture>
+<p align="center">
+  <img src="docs/assets/perch-demo.gif" alt="A short demo of Perch: the shelf slides down, runs a test in the terminal, copies a clipboard item, takes a dropped file, saves a quick note, collapses and resizes panes, and switches between light and dark." width="720">
+  <br>
+  <sub>A scripted demo of the real interface, not a screen recording.</sub>
+</p>
 
 ## What it is
 
@@ -13,9 +14,14 @@ Perch is a macOS shelf that slides down from the top of your screen. It holds fo
 
 The terminal pane is a real terminal (a PTY running under your own login shell). It runs the command-line tools you have already installed, such as Claude Code or Codex. Perch embeds no model, no API client and no account.
 
-Perch is independent software. It is not affiliated with Unclutter, Anthropic or OpenAI.
+Perch is independent software. It is not affiliated with Anthropic or OpenAI.
 
 ## Features
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/perch-dark.png">
+  <img src="docs/assets/perch-light.png" alt="The Perch shelf open across the top of the screen: a terminal running a shell, a clipboard history list, a Files pane with a folder and three documents, and a Notes pane with a launch checklist.">
+</picture>
 
 - **Terminal.** Runs Claude Code, Codex, your login shell, or a custom command. Pick the tool from the gear menu.
 - **Clipboard.** History of copied text and images (the latest 50, plus favourites you star). Click an item to copy it again, send text to the terminal, or open it in Claude.
@@ -151,6 +157,8 @@ npm run package    # build the release zip into release/
 
 `npm run package:dir` builds just `Perch.app`, which is faster for testing. `npm run typecheck` checks all TypeScript projects.
 
+`npm run demo` regenerates the website and README demo (`docs/assets/perch-demo.*`) by driving the built interface with generic demo data. It needs `ffmpeg` (`brew install ffmpeg`) and takes a couple of minutes.
+
 Tests:
 
 ```sh
@@ -180,4 +188,4 @@ See [RELEASING.md](RELEASING.md) for building the zip, publishing the GitHub rel
 
 MIT. See [LICENSE](LICENSE).
 
-Not affiliated with Unclutter, Anthropic or OpenAI.
+Not affiliated with Anthropic or OpenAI.
