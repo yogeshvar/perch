@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perch — a pull-down shelf for the Mac</title>
+<meta name="description" content="Perch is a macOS menu-bar shelf. Pull down from the top edge for a terminal, clipboard history, a file drop shelf and quick notes. Everything stays on your Mac.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://yogeshvar.github.io/perch/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231e1b17'/%3E%3Cpath d='M6 13h8.5a1.5 1.5 0 0 0 3 0H26v4.5H6z' fill='%23e8785f'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Perch — a pull-down shelf for the Mac">
+<meta property="og:description" content="A pull-down shelf for the tools you already run. Terminal, clipboard, files and notes, one gesture away.">
+<meta property="og:url" content="https://yogeshvar.github.io/perch/">
+<meta property="og:image" content="https://yogeshvar.github.io/perch/assets/perch-dark.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Perch — a pull-down shelf for the Mac">
+<meta name="twitter:description" content="A pull-down shelf for the tools you already run.">
+<meta name="twitter:image" content="https://yogeshvar.github.io/perch/assets/perch-dark.png">
+<style>
+:root{
+  --bg:#f7f4ee; --ink:#1e1b17; --muted:#5e574d; --rule:#d9d3c7; --tint:#eee9df;
+  --accent:#c8442f; --accent-text:#b53a26; --code-bg:#1e1b17; --code-ink:#f2eee6;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#121110; --ink:#e9e5dc; --muted:#a8a296; --rule:#2e2b27; --tint:#1b1917;
+    --accent:#e8785f; --accent-text:#e8785f; --code-bg:#1b1917; --code-ink:#e9e5dc;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:1.0625rem/1.65 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 1.25rem}
+a{color:inherit;text-decoration-color:var(--accent);text-decoration-thickness:1px;text-underline-offset:.2em}
+a:hover{color:var(--accent-text)}
+:focus-visible{outline:2px solid var(--accent-text);outline-offset:3px;border-radius:2px}
+h1,h2,h3,.wordmark{font-family:ui-serif,"New York",Charter,Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.15;margin:0}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:var(--bg);padding:.5rem .75rem;z-index:10}
+.skip:focus{left:0}
+header{padding:2.5rem 0 0}
+.wordmark{font-size:1.25rem;display:inline-flex;align-items:center;gap:.6rem}
+.wordmark i{display:inline-block;width:1.5rem;height:.4rem;background:var(--accent);border-radius:1px;position:relative;top:.1rem}
+.hero{padding:4rem 0 3rem}
+h1{font-size:clamp(2.4rem,9vw,3.75rem);letter-spacing:-.025em}
+.pitch{font-family:ui-serif,"New York",Charter,Georgia,serif;font-size:clamp(1.3rem,4.5vw,1.65rem);line-height:1.35;color:var(--muted);margin:1rem 0 2rem;max-width:30ch}
+.cmd{display:flex;align-items:stretch;background:var(--code-bg);color:var(--code-ink);border-radius:6px;max-width:100%}
+.cmd pre{margin:0;padding:.9rem 1rem;overflow-x:auto;flex:1;min-width:0}
+code,pre{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.875rem}
+.cmd code{white-space:pre}
+.copy{font:inherit;font-size:.8125rem;background:none;color:var(--code-ink);border:0;border-left:1px solid rgba(128,128,128,.35);padding:0 1rem;cursor:pointer;display:none;border-radius:0 6px 6px 0}
+.copy:hover{color:#e8785f}
+.copy:focus-visible{outline-color:#e8785f;outline-offset:-3px}
+.js .copy{display:block}
+.hero-links{margin:1.25rem 0 0;color:var(--muted);font-size:.9375rem}
+.hero-links a{color:var(--ink)}
+figure{margin:0 0 4.5rem}
+.shot{display:block;background:var(--tint);border:1px solid var(--rule);border-radius:8px;overflow:hidden;aspect-ratio:9/4}
+.shot img{display:block;width:100%;height:auto;aspect-ratio:9/4;object-fit:cover;color:var(--muted);font-size:.875rem}
+figcaption{font-size:.875rem;color:var(--muted);margin-top:.75rem}
+section{border-top:1px solid var(--rule);padding:3rem 0}
+h2{font-size:1.6rem;margin-bottom:1.5rem}
+h3{font-size:1.15rem;margin-bottom:.25rem}
+p{margin:0 0 1rem}
+.entries{display:grid;gap:1.75rem;margin:0;padding:0;list-style:none}
+.entries p{margin:0;color:var(--muted)}
+@media(min-width:640px){.entries{grid-template-columns:1fr 1fr;gap:2rem 2.5rem}}
+ol.steps{list-style:none;counter-reset:s;margin:0 0 1.5rem;padding:0}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:2.25rem 1fr;padding:.75rem 0;border-bottom:1px solid var(--rule)}
+ol.steps li::before{content:counter(s);font-family:ui-serif,"New York",Georgia,serif;font-size:1.4rem;line-height:1.3;color:var(--accent-text)}
+kbd{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.85em;border:1px solid var(--rule);border-radius:4px;padding:.05em .4em;background:var(--tint)}
+ul.plain{margin:0;padding:0;list-style:none}
+ul.plain li{padding:.6rem 0 .6rem 1.25rem;position:relative}
+ul.plain li::before{content:"";position:absolute;left:0;top:1.2rem;width:.6rem;height:2px;background:var(--accent)}
+.note{color:var(--muted);font-size:.9375rem}
+:not(pre)>code{background:var(--tint);border-radius:3px;padding:.1em .35em;font-size:.85em;overflow-wrap:anywhere}
+details{border-bottom:1px solid var(--rule);padding:.9rem 0}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:1rem}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--accent-text);font-weight:400;font-size:1.25rem;line-height:1.3}
+details[open] summary::after{content:"\2212"}
+details p{margin:.6rem 0 0;color:var(--muted)}
+footer{border-top:1px solid var(--rule);padding:2rem 0 3rem;color:var(--muted);font-size:.875rem}
+footer p{margin:0 0 .4rem}
+footer a{color:var(--ink)}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+@media print{
+  :root{--bg:#fff;--ink:#000;--muted:#333;--rule:#bbb;--tint:#fff}
+  .copy,.skip{display:none!important}
+  .cmd{background:#fff;color:#000;border:1px solid #000}
+  section,figure,details{break-inside:avoid}
+  details>*{display:block}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<header>
+  <span class="wordmark"><i aria-hidden="true"></i>Perch</span>
+</header>
+
+<main id="main">
+  <div class="hero">
+    <h1>Perch</h1>
+    <p class="pitch">A pull-down shelf for the tools you already run.</p>
+    <div class="cmd">
+      <pre><code id="brew">brew install --cask yogeshvar/perch/perch</code></pre>
+      <button class="copy" type="button" aria-label="Copy install command">Copy</button>
+    </div>
+    <p class="hero-links">macOS 13 or later, Apple Silicon. Free and open source. <a href="https://github.com/yogeshvar/perch">View on GitHub</a></p>
+  </div>
+
+  <figure>
+    <div class="shot">
+      <picture>
+        <source srcset="assets/perch-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="assets/perch-light.png" width="2880" height="1280" loading="eager" decoding="async" alt="The Perch shelf open at the top of a Mac screen, showing the terminal, clipboard history, files and notes panes side by side.">
+      </picture>
+    </div>
+    <figcaption>The shelf, open: terminal, clipboard, files and notes in one row.</figcaption>
+  </figure>
+
+  <section aria-labelledby="shelf">
+    <h2 id="shelf">What’s in the shelf</h2>
+    <ul class="entries" role="list">
+      <li><h3>Terminal</h3><p>A real terminal running the CLI you already use: Claude Code, Codex, your shell or a custom command. Real PTY, your own login, nothing embedded.</p></li>
+      <li><h3>Clipboard</h3><p>History of text and images, with favourites. Send an item to the terminal or open it in Claude.</p></li>
+      <li><h3>Files</h3><p>A drop shelf. Drag files in to keep them close, drag them back out. References only, nothing is copied.</p></li>
+      <li><h3>Notes</h3><p>Quick markdown notes. Rename them, search them.</p></li>
+    </ul>
+    <p class="note" style="margin-top:1.75rem">Panes collapse to slim rails and resize by dragging the dividers. Drag the shelf’s edge to change its height. Light and dark themes follow the system.</p>
+  </section>
+
+  <section aria-labelledby="pull">
+    <h2 id="pull">The pull</h2>
+    <ol class="steps" role="list">
+      <li><span>Move the pointer to the top edge of the screen.</span></li>
+      <li><span>Pull down with two fingers on the trackpad.</span></li>
+      <li><span>The shelf slides open, with the terminal, clipboard, files and notes panes ready.</span></li>
+    </ol>
+    <p>Prefer the keyboard? Press <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd>. It works without any extra permission.</p>
+  </section>
+
+  <section aria-labelledby="private">
+    <h2 id="private">Private by design</h2>
+    <ul class="plain" role="list">
+      <li>Everything stays on your Mac. Notes, clipboard history and settings live in <code>~/Library/Application Support/Perch</code> (each note is also saved as a markdown file in its <code>notes</code> folder).</li>
+      <li>No accounts and no analytics.</li>
+      <li>No network calls from Perch itself. The terminal runs your own tools under your own login.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">Install</h2>
+    <div class="cmd">
+      <pre><code id="brew2">brew install --cask yogeshvar/perch/perch</code></pre>
+      <button class="copy" type="button" aria-label="Copy install command again">Copy</button>
+    </div>
+    <p class="note" style="margin-top:1rem">The cask lives in the tap <code>yogeshvar/homebrew-perch</code>. The source is on <a href="https://github.com/yogeshvar/perch">GitHub</a>. Requires macOS 13 or later on Apple Silicon.</p>
+    <h3 style="margin-top:2rem">First launch</h3>
+    <p>Perch is ad-hoc signed and not notarized, so macOS blocks the first launch. Open System Settings, go to Privacy &amp; Security, and click Open Anyway (macOS 15 and later; on macOS 13 and 14, right-click the app and choose Open). Or clear the quarantine flag from a terminal:</p>
+    <div class="cmd">
+      <pre><code>xattr -dr com.apple.quarantine /Applications/Perch.app</code></pre>
+    </div>
+    <p class="note" style="margin-top:1rem">The pull gesture needs macOS Accessibility permission. Grant it in System Settings, Privacy &amp; Security, Accessibility. You may need to grant it again after an update. <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd> works either way.</p>
+  </section>
+
+  <section aria-labelledby="faq">
+    <h2 id="faq">Questions</h2>
+    <details>
+      <summary>Is this Unclutter?</summary>
+      <p>No. Perch is independent software and is not affiliated with Unclutter.</p>
+    </details>
+    <details>
+      <summary>Does it embed Claude?</summary>
+      <p>No. The terminal pane runs the CLI you install yourself, such as Claude Code or Codex, in a real PTY with your own login. Perch embeds nothing and is not affiliated with Anthropic or OpenAI.</p>
+    </details>
+    <details>
+      <summary>Does it run on Intel Macs?</summary>
+      <p>No. Perch is built for Apple Silicon.</p>
+    </details>
+    <details>
+      <summary>Why does it ask for Accessibility?</summary>
+      <p>Only for the two-finger pull at the top edge of the screen. Without the permission the gesture is off, but the <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>L</kbd> shortcut still works.</p>
+    </details>
+    <details>
+      <summary>How do I quit, or hide the menu bar icon?</summary>
+      <p>Both are in the menu bar icon’s menu and in the gear tab of the shelf. Settings also cover launch at login and the scroll gesture permission.</p>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <p>Perch is open source under the MIT license. <a href="https://github.com/yogeshvar/perch">github.com/yogeshvar/perch</a></p>
+  <p>Not affiliated with Unclutter, Anthropic or OpenAI.</p>
+</footer>
+</div>
+<script>
+if(navigator.clipboard)document.documentElement.classList.add('js');
+document.querySelectorAll('.cmd').forEach(function(b){
+  var btn=b.querySelector('.copy'),code=b.querySelector('code');
+  if(!btn||!navigator.clipboard)return;
+  btn.addEventListener('click',function(){
+    navigator.clipboard.writeText(code.textContent).then(function(){
+      btn.textContent='Copied';setTimeout(function(){btn.textContent='Copy'},1500);
+    },function(){
+      var r=document.createRange();r.selectNodeContents(code);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);
+      btn.textContent='Press ⌘C';setTimeout(function(){btn.textContent='Copy'},2500);
+    });
+  });
+});
+</script>
+</body>
+</html>

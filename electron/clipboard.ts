@@ -1,0 +1,244 @@
+import { randomUUID } from 'node:crypto'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { clipboard, ClipboardItem, nativeImage, type NativeImage } from 'electron'
+import type Database from 'better-sqlite3'
+import type { Clip } from '../src/shared/types'
+import type { ClipRow } from './db'
+import { emit } from './bus'
+
+const HISTORY_LIMIT = 50
+const thumbs = new Map<string, string>()
+
+let lastText = ''
+let lastImageSig = ''
+let suppressText = ''
+let timer: NodeJS.Timeout | null = null
+let database: Database.Database | null = null
+let imageDir = ''
+
+export function startClipboard(db: Database.Database, userData: string): void {
+  database = db
+  imageDir = join(userData, 'clips')
+  mkdirSync(imageDir, { recursive: true })
+  void poll()
+  timer = setInterval(() => void poll(), 700)
+}
+
+export function stopClipboard(): void {
+  if (timer) clearInterval(timer)
+  timer = null
+}
+
+export function listClips(): Clip[] {
+  if (!database) return []
+  const rows = database
+    .prepare('SELECT * FROM clips ORDER BY favorite DESC, created_at DESC')
+    .all() as ClipRow[]
+  return rows.map(toClip)
+}
+
+export async function copyClip(id: string): Promise<void> {
+  const row = clipById(id)
+  if (!row) return
+  if (row.kind === 'image' && row.image_path) {
+    const image = nativeImage.createFromPath(row.image_path)
+    if (image.isEmpty()) return
+    const png = image.toPNG()
+    lastText = ''
+    suppressText = ''
+    lastImageSig = signature(png)
+    await clipboard.write([new ClipboardItem({ 'image/png': new Blob([Uint8Array.from(png)]) })])
+    return
+  }
+  const text = row.text ?? ''
+  suppressText = text
+  lastText = text
+  await clipboard.writeText(text)
+}
+
+export function toggleFavorite(id: string): Clip[] {
+  database
+    ?.prepare('UPDATE clips SET favorite = CASE favorite WHEN 1 THEN 0 ELSE 1 END WHERE id = ?')
+    .run(id)
+  const clips = listClips()
+  emit('clips:changed', clips)
+  return clips
+}
+
+export function deleteClip(id: string): Clip[] {
+  const row = clipById(id)
+  if (row?.image_path) removeFile(row.image_path)
+  thumbs.delete(id)
+  database?.prepare('DELETE FROM clips WHERE id = ?').run(id)
+  const clips = listClips()
+  emit('clips:changed', clips)
+  return clips
+}
+
+export function clearHistory(): Clip[] {
+  if (!database) return []
+  const rows = database.prepare('SELECT id, image_path FROM clips WHERE favorite = 0').all() as {
+    id: string
+    image_path: string | null
+  }[]
+  for (const row of rows) {
+    if (row.image_path) removeFile(row.image_path)
+    thumbs.delete(row.id)
+  }
+  database.prepare('DELETE FROM clips WHERE favorite = 0').run()
+  const clips = listClips()
+  emit('clips:changed', clips)
+  return clips
+}
+
+export function clipText(id: string): string | null {
+  const row = clipById(id)
+  return row?.text ?? null
+}
+
+let polling = false
+
+async function poll(): Promise<void> {
+  if (polling) return
+  polling = true
+  try {
+    const text = await clipboard.readText()
+    if (text && text === suppressText) return
+    if (text && text !== lastText) {
+      lastText = text
+      suppressText = ''
+      rememberText(text)
+      return
+    }
+    if (text) return
+    if (!(await clipboard.has('image/png'))) return
+    const items = await clipboard.read()
+    for (const item of items) {
+      if (!item.types.includes('image/png')) continue
+      const blob = await item.getType('image/png')
+      if (!(blob instanceof Blob)) continue
+      const png = Buffer.from(await blob.arrayBuffer())
+      const sig = signature(png)
+      if (!sig || sig === lastImageSig) return
+      const image = nativeImage.createFromBuffer(png)
+      if (image.isEmpty()) return
+      lastImageSig = sig
+      rememberImage(image)
+      return
+    }
+  } catch {
+    // The clipboard can be busy while another app writes to it.
+  } finally {
+    polling = false
+  }
+}
+
+function rememberText(text: string): void {
+  /* v8 ignore next -- @preserve defensive: poll() only runs after startClipboard() set the database, and only with non-empty text */
+  if (!database || !text) return
+  if (text.length > 1_000_000) return
+  const existing = database
+    .prepare(`SELECT id FROM clips WHERE kind = 'text' AND text = ? ORDER BY created_at DESC LIMIT 1`)
+    .get(text) as { id: string } | undefined
+  const now = Date.now()
+  if (existing) {
+    database.prepare('UPDATE clips SET created_at = ?, preview = ? WHERE id = ?').run(now, previewOf(text), existing.id)
+  } else {
+    database
+      .prepare(
+        `INSERT INTO clips (id, kind, text, image_path, preview, favorite, created_at)
+         VALUES (?, 'text', ?, NULL, ?, 0, ?)`
+      )
+      .run(randomUUID(), text, previewOf(text), now)
+  }
+  trim()
+  emit('clips:changed', listClips())
+}
+
+function rememberImage(image: NativeImage): void {
+  /* v8 ignore next -- @preserve defensive: poll() only runs after startClipboard() set the database */
+  if (!database) return
+  const size = image.getSize()
+  if (size.width < 2 || size.height < 2) return
+  const bitmapBytes = size.width * size.height * 4
+  if (bitmapBytes > 20_000_000) return
+  const stored = bitmapBytes > 8_000_000 ? image.resize({ width: 1600, quality: 'good' }) : image
+  const png = stored.toPNG()
+  if (png.length > 4_000_000) return
+  const id = randomUUID()
+  const imagePath = join(imageDir, `${id}.png`)
+  writeFileSync(imagePath, png)
+  const thumb = stored.resize({ width: 480, quality: 'good' }).toDataURL()
+  thumbs.set(id, thumb)
+  database
+    .prepare(
+      `INSERT INTO clips (id, kind, text, image_path, preview, favorite, created_at)
+       VALUES (?, 'image', NULL, ?, ?, 0, ?)`
+    )
+    .run(id, imagePath, 'Image', Date.now())
+  trim()
+  emit('clips:changed', listClips())
+}
+
+function trim(): void {
+  /* v8 ignore next -- @preserve defensive: only called right after a row was stored, so the database is set */
+  if (!database) return
+  const extra = database
+    .prepare(
+      `SELECT id, image_path FROM clips
+       WHERE favorite = 0 AND id NOT IN (
+         SELECT id FROM clips WHERE favorite = 0 ORDER BY created_at DESC LIMIT ?
+       )`
+    )
+    .all(HISTORY_LIMIT) as { id: string; image_path: string | null }[]
+  for (const row of extra) {
+    if (row.image_path) removeFile(row.image_path)
+    thumbs.delete(row.id)
+    database.prepare('DELETE FROM clips WHERE id = ?').run(row.id)
+  }
+}
+
+function clipById(id: string): ClipRow | undefined {
+  return database?.prepare('SELECT * FROM clips WHERE id = ?').get(id) as ClipRow | undefined
+}
+
+function toClip(row: ClipRow): Clip {
+  return {
+    id: row.id,
+    kind: row.kind,
+    preview: row.preview,
+    text: row.text,
+    thumb: row.kind === 'image' ? thumbFor(row) : null,
+    favorite: row.favorite === 1,
+    createdAt: row.created_at
+  }
+}
+
+function thumbFor(row: ClipRow): string | null {
+  const cached = thumbs.get(row.id)
+  if (cached) return cached
+  if (!row.image_path) return null
+  const image = nativeImage.createFromPath(row.image_path)
+  if (image.isEmpty()) return null
+  const thumb = image.resize({ width: 480, quality: 'good' }).toDataURL()
+  thumbs.set(row.id, thumb)
+  return thumb
+}
+
+function previewOf(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().slice(0, 180)
+}
+
+function signature(png: Buffer): string {
+  if (png.length < 8) return ''
+  return `${png.length}:${png.readUInt32BE(0)}:${png.readUInt32BE(png.length - 4)}`
+}
+
+function removeFile(path: string): void {
+  try {
+    rmSync(path, { force: true })
+  } catch {
+    // The preview is already gone.
+  }
+}

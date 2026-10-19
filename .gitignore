@@ -1,0 +1,13 @@
+node_modules
+out
+dist
+dist-types
+native/bin
+*.log
+.DS_Store
+.vite
+coverage
+release
+*.zip
+.env
+.env.*
